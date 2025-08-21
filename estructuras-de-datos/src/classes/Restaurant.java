@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import dto.PedidoDto;
 
@@ -40,6 +41,19 @@ public class Restaurant {
 			System.out.println(p);
 		}
 	}
+	/**
+	 * This version with Stream API
+	 * @return
+	 */
+	public Map<Integer, Double> montosPorCajeroStreamVersion() {
+	    return pedidos.stream()
+	            .filter(p -> mapCajeros.containsKey(p.getIdCajero()))
+	            .collect(Collectors.groupingBy(
+	                Pedido::getIdCajero,
+	                Collectors.summingDouble(Pedido::getMonto)
+	            ));
+	}
+	
 	
 	public Map<Integer,Double> montosPorCajero(){
 		Map<Integer,Double>montosPorCajero = new HashMap<>();
@@ -81,23 +95,29 @@ public class Restaurant {
 		return pedidosDtos;
 	}
 
-	private int obtenerNivelBat(Pedido p) {
-		if(mapRobots.containsKey(p.getCod())) {
-			Robot r = mapRobots.get(p.getCod());
-			return r.getNivelBat();
-		}
-		else {
-			return -1;
-		}
-	}
-
 	private String obtenerApellido(Pedido p) {
-		if(mapCajeros.containsKey(p.getIdCajero())) {
-			Cajero cajero = mapCajeros.get(p.getIdCajero());
-			return cajero.getLastName();
-		} else {
-			return null;
+	    Cajero cajero = mapCajeros.get(p.getIdCajero());
+	    if (cajero == null) {
+	        throw new IllegalArgumentException("Cajero no encontrado: " + p.getIdCajero());
+	    }
+	    return cajero.getLastName();
+	}
+	
+	/*Optional version
+	 * 
+	 * private String obtenerApellido(Pedido p) {
+    		return Optional.ofNullable(mapCajeros.get(p.getIdCajero()))
+                   .map(Cajero::getLastName)
+                   .orElse("Desconocido");
 		}
+	 */
+
+	private int obtenerNivelBat(Pedido p) {
+	    Robot robot = mapRobots.get(p.getCod());
+	    if (robot == null) {
+	        throw new IllegalArgumentException("Robot no encontrado: " + p.getCod());
+	    }
+	    return robot.getNivelBat();
 	}
 	
 	public void mostrarPedidosConMasRiesgo() {
